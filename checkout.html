@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#04121c">
+<title>Finalizar pedido — Puffpod</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep:#031b2e; --panel:#062a44; --panel-2:#0a3a5c;
+    --line: rgba(255,255,255,0.10);
+    --teal:#00b4d8; --aqua:#48cae4; --foam:#caf0f8; --seafoam:#2ec4b6; --midblue:#0077b6;
+    --ink:#eaf6fb; --muted:#7fa8c9; --radius:22px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:linear-gradient(180deg, var(--deep), #04121f 40%, #030d18);
+    color:var(--ink); font-family:'Manrope',sans-serif; min-height:100vh; min-height:100dvh;
+    position:relative;
+  }
+  ::selection{ background:var(--teal); color:#031b2e; }
+  h1,h2,h3{ font-family:'Baloo 2',sans-serif; letter-spacing:-0.01em; }
+  a{ color:inherit; text-decoration:none; }
+
+  body::before{
+    content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse 60% 40% at 15% 0%, rgba(0,180,216,0.14), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 90% 100%, rgba(46,196,182,0.10), transparent 60%);
+  }
+
+  header{
+    position:relative; z-index:1;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px clamp(20px,5vw,64px);
+    border-bottom:1px solid var(--line);
+    backdrop-filter:blur(10px);
+  }
+  .logo{ display:flex; align-items:center; filter:drop-shadow(0 0 8px rgba(72,202,228,0.6)); }
+  .back-link{
+    display:flex; align-items:center; gap:8px;
+    font-size:0.86rem; font-weight:600; color:var(--muted);
+    transition:color .25s;
+  }
+  .back-link:hover{ color:var(--ink); }
+  .back-link svg{ width:16px; height:16px; stroke:currentColor; }
+
+  main{ position:relative; z-index:1; max-width:960px; margin:0 auto; padding:48px clamp(20px,5vw,40px) 100px; }
+
+  .checkout-title{ margin-bottom:34px; }
+  .checkout-title .eyebrow{
+    font-family:'JetBrains Mono',monospace; font-size:0.74rem; letter-spacing:0.2em; text-transform:uppercase;
+    color:var(--aqua); margin-bottom:12px; display:block;
+  }
+  .checkout-title h1{ font-size:clamp(1.6rem,3.6vw,2.3rem); font-weight:700; }
+
+  .checkout-layout{ display:grid; grid-template-columns:1.15fr 0.85fr; gap:28px; align-items:start; }
+  @media (max-width:820px){ .checkout-layout{ grid-template-columns:1fr; } }
+
+  .panel{
+    background:linear-gradient(160deg, var(--panel-2), var(--panel));
+    border:1px solid var(--line); border-radius:var(--radius);
+    padding:28px clamp(20px,4vw,32px);
+  }
+
+  /* form */
+  .field{ display:flex; flex-direction:column; gap:7px; margin-bottom:18px; }
+  .field span{
+    font-family:'JetBrains Mono',monospace; font-size:0.7rem; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  .field input{
+    font-family:'Manrope',sans-serif; font-size:0.96rem; color:var(--ink);
+    background:var(--deep); border:1px solid var(--line); border-radius:12px;
+    padding:13px 15px; transition:border-color .25s, box-shadow .25s;
+  }
+  .field input::placeholder{ color:rgba(127,168,201,0.6); }
+  .field input:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(0,180,216,0.18); }
+  .field input.invalid{ border-color:#ff6b6b; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:480px){ .field-row{ grid-template-columns:1fr; } }
+
+  .form-error{
+    background:rgba(255,107,107,0.1); border:1px solid rgba(255,107,107,0.35);
+    color:#ffb3b3; font-size:0.84rem; border-radius:10px; padding:12px 15px; margin-bottom:18px;
+  }
+
+  .btn{
+    font-family:'Manrope',sans-serif; font-weight:700; font-size:0.92rem;
+    padding:15px 26px; border-radius:999px; border:none; cursor:pointer;
+    width:100%; text-align:center; touch-action:manipulation;
+    background:linear-gradient(135deg, var(--teal), var(--seafoam));
+    color:#031b2e; box-shadow:0 0 30px rgba(46,196,182,0.3);
+    transition:transform .25s, box-shadow .25s;
+  }
+  .btn:hover{ box-shadow:0 0 42px rgba(46,196,182,0.55); transform:translateY(-2px); }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  .secure-note{
+    display:flex; align-items:center; gap:8px; justify-content:center;
+    margin-top:16px; color:var(--muted); font-size:0.76rem;
+  }
+  .secure-note svg{ width:14px; height:14px; stroke:var(--aqua); flex-shrink:0; }
+
+  /* order summary */
+  .summary-title{ font-size:1.05rem; font-weight:700; margin-bottom:18px; }
+  .summary-item{
+    display:flex; align-items:center; gap:12px; padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .summary-item:last-of-type{ border-bottom:none; }
+  .summary-icon{
+    width:42px; height:42px; border-radius:11px; flex-shrink:0;
+    background:var(--deep); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .summary-icon svg{ width:22px; height:22px; stroke:var(--card-glow, var(--teal)); }
+  .summary-info{ flex:1; min-width:0; }
+  .summary-info .name{ font-size:0.86rem; font-weight:600; }
+  .summary-info .qty{ color:var(--muted); font-size:0.74rem; margin-top:2px; }
+  .summary-sub{ font-family:'JetBrains Mono',monospace; font-size:0.86rem; font-weight:600; flex-shrink:0; }
+
+  .summary-total{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:18px; padding-top:18px; border-top:1px solid var(--line);
+    font-family:'Baloo 2',sans-serif; font-size:1.2rem; font-weight:700;
+  }
+  .summary-total span:last-child{ color:var(--aqua); }
+
+  .empty-cart{ text-align:center; padding:50px 20px; color:var(--muted); }
+  .empty-cart h2{ color:var(--ink); font-size:1.3rem; margin-bottom:10px; }
+  .empty-cart a{ display:inline-block; margin-top:20px; }
+
+  /* success */
+  .success-view{
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+    padding:60px 24px; gap:16px; max-width:460px; margin:0 auto;
+  }
+  .success-icon{
+    width:74px; height:74px; border-radius:50%;
+    background:linear-gradient(135deg, var(--teal), var(--seafoam));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 40px rgba(46,196,182,0.4);
+  }
+  .success-icon svg{ width:34px; height:34px; stroke:#031b2e; }
+  .success-view h1{ font-size:1.5rem; }
+  .success-view p{ color:var(--muted); font-size:0.94rem; }
+  .success-view p strong{ color:var(--ink); }
+  .order-id{
+    font-family:'JetBrains Mono',monospace; font-size:0.86rem; color:var(--aqua);
+    border:1px dashed rgba(72,202,228,0.4); border-radius:10px; padding:10px 20px;
+  }
+  .success-view .btn{ margin-top:10px; }
+  .success-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%;margin-top:2px}
+  .success-actions .btn{width:auto;min-width:180px;text-decoration:none}
+  .whatsapp-btn{background:#25D366;color:#031b2e!important;box-shadow:0 10px 24px rgba(37,211,102,.18)}
+  .success-email-note{font-size:.78rem!important;color:#88abc1!important;margin-top:-4px}
+  @media(max-width:560px){.success-actions{flex-direction:column}.success-actions .btn{width:100%}}
+
+  .section-title{font-family:'Baloo 2',sans-serif;font-size:1.08rem;font-weight:700;margin:4px 0 16px;padding-top:4px;display:flex;align-items:center;gap:9px}
+  .section-title:not(:first-of-type){margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}
+  .cep-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+  .cep-row .field{margin-bottom:18px}
+  .cep-btn{width:auto;padding:13px 18px;margin-bottom:18px;box-shadow:none;background:rgba(72,202,228,.12);color:var(--foam);border:1px solid rgba(72,202,228,.32)}
+  .delivery-note{display:flex;gap:10px;align-items:flex-start;margin:2px 0 18px;padding:12px 14px;border-radius:13px;background:rgba(72,202,228,.08);border:1px solid rgba(72,202,228,.20);color:#a9cbe0;font-size:.78rem;line-height:1.45}
+  .delivery-note.alert{background:rgba(255,181,71,.10);border-color:rgba(255,181,71,.34);color:#ffd79b}
+  .delivery-note.free{background:rgba(46,196,182,.10);border-color:rgba(46,196,182,.30);color:#b8eee8}
+  .cashback-panel{margin:20px 0 18px;padding:16px;border-radius:16px;background:rgba(46,196,182,.08);border:1px solid rgba(46,196,182,.25)}
+  .cashback-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:9px}
+  .cashback-head strong{font-family:'Baloo 2',sans-serif;font-size:1rem}.cashback-balance{color:var(--aqua);font:600 .78rem 'JetBrains Mono',monospace}
+  .cashback-toggle{display:flex;align-items:center;gap:9px;color:#cde6ef;font-size:.82rem;cursor:pointer}.cashback-toggle input{accent-color:var(--seafoam);width:17px;height:17px}
+  .cashback-help{color:var(--muted);font-size:.72rem;line-height:1.45;margin-top:8px}
+  .summary-breakdown{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:grid;gap:9px}
+  .summary-line{display:flex;justify-content:space-between;gap:16px;color:#b8d0df;font-size:.82rem}.summary-line.discount span:last-child{color:#65e8a7}.summary-line.surcharge{color:#ffd79b}
+  @media(max-width:560px){.panel{padding:22px 17px}.checkout-title{margin-bottom:22px}.cep-row{grid-template-columns:1fr}.cep-btn{width:100%;margin-top:-8px}.checkout-layout{gap:18px}main{padding-top:28px}.field-row{grid-template-columns:1fr}.cashback-head{align-items:flex-start;flex-direction:column;gap:3px}}
+
+  [hidden]{ display:none !important; }
+
+
+  /* ---------- PAGAMENTO / InfinitePay ---------- */
+  .pix-view{ max-width:680px; margin:0 auto; }
+  .pix-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:22px;
+    padding:clamp(22px,4vw,34px); text-align:center;
+  }
+  .pix-card h1{ margin:0 0 8px; font-size:clamp(1.6rem,4vw,2.2rem); }
+  .pix-card .pix-sub{ color:var(--muted); margin:0 auto 22px; max-width:520px; line-height:1.6; }
+  #pixQr{
+    width:230px; min-height:230px; margin:0 auto 18px; padding:12px;
+    background:#fff; border-radius:18px; display:flex; align-items:center; justify-content:center;
+  }
+  #pixQr img, #pixQr canvas{ max-width:100%; height:auto !important; }
+  .pix-code-wrap{ display:flex; gap:10px; margin:14px 0 12px; }
+  .pix-code{
+    flex:1; min-width:0; border:1px solid var(--line); background:var(--deep); color:var(--ink);
+    border-radius:12px; padding:13px 14px; font:600 .78rem/1.4 'JetBrains Mono',monospace;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left;
+  }
+  .copy-pix{ width:auto; white-space:nowrap; padding:12px 16px; }
+  .pix-status{
+    display:inline-flex; align-items:center; gap:9px; margin-top:10px; padding:9px 13px;
+    border-radius:999px; border:1px solid rgba(72,202,228,.28); color:var(--teal);
+    background:rgba(72,202,228,.08); font-weight:700; font-size:.82rem;
+  }
+  .pix-status::before{ content:''; width:9px; height:9px; border-radius:50%; background:currentColor; box-shadow:0 0 0 4px rgba(72,202,228,.12); }
+  .pix-status.paid{ color:#65e8a7; border-color:rgba(101,232,167,.32); background:rgba(101,232,167,.08); }
+  .pix-status.error{ color:#ff8b8f; border-color:rgba(229,72,77,.4); background:rgba(229,72,77,.1); }
+  .pix-meta{ margin-top:14px; color:var(--muted); font-size:.76rem; }
+  @media (max-width:560px){ .pix-code-wrap{ flex-direction:column; } .copy-pix{ width:100%; } #pixQr{ width:210px; min-height:210px; } }
+
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo" aria-label="Página inicial">
+    <svg viewBox="0 0 40 40" width="30" height="30" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 4c7 8 11 14 11 19a11 11 0 0 1-22 0c0-5 4-11 11-19Z"/>
+    </svg>
+  </a>
+  <a href="index.html" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    Voltar à loja
+  </a>
+</header>
+
+<main>
+
+  <!-- EMPTY STATE -->
+  <div class="empty-cart" id="emptyState" hidden>
+    <h2>Seu carrinho está vazio</h2>
+    <p>Volte à loja e adicione produtos antes de finalizar o pedido.</p>
+    <a href="index.html" class="btn" style="width:auto; display:inline-block;">Ir para a vitrine</a>
+  </div>
+
+  <!-- CHECKOUT FORM -->
+  <div id="checkoutView">
+    <div class="checkout-title">
+      <span class="eyebrow">Finalizar pedido</span>
+      <h1>Só faltam alguns dados</h1>
+    </div>
+
+    <div class="checkout-layout">
+      <div class="panel">
+        <p class="form-error" id="formError" hidden></p>
+        <form id="checkoutForm" novalidate>
+          <div class="section-title">Dados pessoais</div>
+          <div class="field">
+            <span>Nome completo</span>
+            <input type="text" id="ckName" placeholder="Como no documento" autocomplete="name">
+          </div>
+          <div class="field-row">
+            <div class="field"><span>CPF</span><input type="text" id="ckCpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14" autocomplete="off"></div>
+            <div class="field"><span>Telefone</span><input type="text" id="ckPhone" placeholder="(00) 00000-0000" inputmode="numeric" maxlength="15" autocomplete="tel"></div>
+          </div>
+          <div class="field"><span>E-mail</span><input type="email" id="ckEmail" placeholder="voce@email.com" autocomplete="email"></div>
+
+          <div class="section-title">Entrega</div>
+          <div class="cep-row">
+            <div class="field"><span>CEP</span><input type="text" id="ckCep" placeholder="00000-000" inputmode="numeric" maxlength="9" autocomplete="postal-code"></div>
+            <button type="button" class="btn cep-btn" id="calcDeliveryBtn">Calcular entrega</button>
+          </div>
+          <div class="field"><span>Rua</span><input type="text" id="ckStreet" placeholder="Preenchida pelo CEP" autocomplete="address-line1"></div>
+          <div class="field-row">
+            <div class="field"><span>Número</span><input type="text" id="ckNumber" placeholder="Número" autocomplete="address-line2"></div>
+            <div class="field"><span>Complemento</span><input type="text" id="ckComplement" placeholder="Apto, bloco, casa..." autocomplete="address-line3"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><span>Bairro</span><input type="text" id="ckNeighborhood" placeholder="Bairro" readonly></div>
+            <div class="field"><span>Cidade / UF</span><input type="text" id="ckCityState" placeholder="Curitiba / PR" readonly></div>
+          </div>
+          <div class="field"><span>Ponto de referência</span><input type="text" id="ckReference" placeholder="Opcional"></div>
+          <div id="deliveryNote" class="delivery-note">Informe seu CEP para calcular a entrega.</div>
+
+          <div id="cashbackPanel" class="cashback-panel" hidden>
+            <div class="cashback-head"><strong>Cashback Puffpod</strong><span id="cashbackBalance" class="cashback-balance">R$ 0,00 disponíveis</span></div>
+            <label class="cashback-toggle"><input type="checkbox" id="useCashback"> Usar meu saldo de cashback nesta compra</label>
+            <div class="cashback-help" id="cashbackHelp">R$ 100 em compras = R$ 1 de cashback. O desconto será aplicado antes de abrir o pagamento.</div>
+          </div>
+          <button type="submit" class="btn">Ir para pagamento</button>
+          <div class="secure-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+            Seus dados servem só para confirmar o pedido — nenhuma informação de pagamento é processada nesta página.
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="summary-title">Resumo do pedido</div>
+        <div id="summaryItems"></div>
+        <div class="summary-breakdown">
+          <div class="summary-line"><span>Produtos</span><span id="summarySubtotal">R$ 0</span></div>
+          <div class="summary-line" id="summaryDeliveryLine"><span>Entrega</span><span id="summaryDelivery">A calcular</span></div>
+          <div class="summary-line discount" id="summaryCashbackLine" hidden><span>Cashback</span><span id="summaryCashback">- R$ 0</span></div>
+        </div>
+        <div class="summary-total"><span>Total</span><span id="summaryTotal">R$ 0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="success-view" id="successView" hidden>
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <h1>Pagamento confirmado!</h1>
+    <p>Recebemos seu pagamento. Seu pedido <strong id="successOrderText"></strong> foi confirmado e seu produto está a caminho.</p>
+    <div class="order-id" id="orderId"></div>
+    <p class="success-email-note" id="successEmailNote">Enviaremos a confirmação para o e-mail e WhatsApp informados no checkout.</p>
+    <div class="success-actions">
+      <a id="successWhatsApp" href="#" target="_blank" rel="noopener noreferrer" class="btn whatsapp-btn">WhatsApp Puffpod</a>
+      <a href="index.html" class="btn">Voltar à loja</a>
+    </div>
+  </div>
+
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCNyS_1qnZ4E82a0H2TOzc3DyOjNjpGZFU",
+    authDomain: "puffpod-28a24.firebaseapp.com",
+    projectId: "puffpod-28a24",
+    storageBucket: "puffpod-28a24.firebasestorage.app",
+    messagingSenderId: "892589512245",
+    appId: "1:892589512245:web:067d8b975576c30627437c",
+    measurementId: "G-PBG557CJ0T"
+  };
+  firebase.initializeApp(firebaseConfig);
+  window.auth = firebase.auth();
+  window.db = firebase.firestore();
+</script>
+
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  let items = [];
+  try{ items = JSON.parse(decodeURIComponent(params.get('cart') || '[]')); }catch(e){ items = []; }
+  const isInfinitePayReturn = params.get('infinitepay_return') === '1' || (!!params.get('order_nsu') && !!params.get('transaction_nsu') && !!params.get('slug'));
+
+  const $ = id => document.getElementById(id);
+  const emptyState=$('emptyState'), checkoutView=$('checkoutView'), successView=$('successView');
+  const summaryItems=$('summaryItems'), summarySubtotal=$('summarySubtotal'), summaryDelivery=$('summaryDelivery'), summaryTotal=$('summaryTotal');
+  const summaryCashbackLine=$('summaryCashbackLine'), summaryCashback=$('summaryCashback');
+  const checkoutForm=$('checkoutForm'), formError=$('formError');
+  const ckName=$('ckName'), ckCpf=$('ckCpf'), ckPhone=$('ckPhone'), ckEmail=$('ckEmail'), ckCep=$('ckCep'), ckStreet=$('ckStreet'), ckNumber=$('ckNumber'), ckComplement=$('ckComplement'), ckNeighborhood=$('ckNeighborhood'), ckCityState=$('ckCityState'), ckReference=$('ckReference');
+  const calcDeliveryBtn=$('calcDeliveryBtn'), deliveryNote=$('deliveryNote'), cashbackPanel=$('cashbackPanel'), cashbackBalance=$('cashbackBalance'), useCashback=$('useCashback'), cashbackHelp=$('cashbackHelp');
+  const orderIdEl=$('orderId'), successOrderText=$('successOrderText'), successEmailNote=$('successEmailNote'), successWhatsApp=$('successWhatsApp');
+
+  let activeOrderId=null, deliveryQuote=null;
+  let realUser=null, cashbackAvailable=0, cashbackUsed=0;
+  const toBRL=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const genericIcon='<circle cx="12" cy="12" r="8"/>';
+
+  if(!items.length && !isInfinitePayReturn){ emptyState.hidden=false; checkoutView.hidden=true; return; }
+  if(isInfinitePayReturn) checkoutView.hidden=true;
+  let subtotal=0;
+  summaryItems.innerHTML=items.map(it=>{const price=Number(it.price)||0,qty=Math.max(1,parseInt(it.qty,10)||1),sub=price*qty;subtotal+=sub;return `<div class="summary-item"><div class="summary-icon" style="--card-glow:${it.glow||'#00b4d8'}"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6">${genericIcon}</svg></div><div class="summary-info"><div class="name">${String(it.name||'Produto').replace(/[<>]/g,'')}</div><div class="qty">Qtd. ${qty} · ${toBRL(price)} un.</div></div><div class="summary-sub">${toBRL(sub)}</div></div>`}).join('');
+  summarySubtotal.textContent=toBRL(subtotal);
+
+  function normalizeDeliveryQuote(data){
+    const q={...data};
+    q.baseFeeCents=Number(data.baseFeeCents ?? data.base_fee_cents ?? 0);
+    q.surchargeCents=Number(data.surchargeCents ?? data.surcharge_cents ?? 0);
+    q.feeCents=Number(data.feeCents ?? data.fee_cents ?? 0);
+    q.freeShipping=Boolean(data.freeShipping ?? data.free_shipping);
+    q.surchargeActive=Boolean(data.surchargeActive ?? data.surcharge_active);
+    q.reasons=Array.isArray(data.reasons)?data.reasons:[];
+    return q;
+  }
+  function currentDelivery(){return deliveryQuote ? Math.max(0,Number(deliveryQuote.feeCents)||0)/100 : 0;}
+  function maxCashbackUsable(){return Math.max(0, subtotal + currentDelivery() - 1);}
+  function recalc(){
+    cashbackUsed=(useCashback && useCashback.checked)?Math.min(cashbackAvailable,maxCashbackUsable()):0;
+    const total=subtotal+currentDelivery()-cashbackUsed;
+    summaryDelivery.textContent=deliveryQuote?toBRL(currentDelivery()):'A calcular';
+    summaryCashbackLine.hidden=!(cashbackUsed>0); summaryCashback.textContent='- '+toBRL(cashbackUsed);
+    summaryTotal.textContent=toBRL(total);
+    if(cashbackPanel && !cashbackPanel.hidden) cashbackHelp.textContent = useCashback.checked ? `Desconto de ${toBRL(cashbackUsed)} será aplicado. Após o pagamento, esta compra também gera 1% de cashback sobre os produtos pagos.` : 'R$ 100 em compras = R$ 1 de cashback. Marque acima se quiser usar seu saldo.';
+    return total;
+  }
+  recalc();
+
+  ckCpf.addEventListener('input',()=>{let v=ckCpf.value.replace(/\D/g,'').slice(0,11);v=v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');ckCpf.value=v;});
+  ckPhone.addEventListener('input',()=>{let v=ckPhone.value.replace(/\D/g,'').slice(0,11);v=v.replace(/^(\d{2})(\d)/,'($1) $2').replace(/(\d{5})(\d{1,4})$/,'$1-$2');ckPhone.value=v;});
+  let cepAutoTimer=null;
+  ckCep.addEventListener('input',()=>{
+    let v=ckCep.value.replace(/\D/g,'').slice(0,8);if(v.length>5)v=v.slice(0,5)+'-'+v.slice(5);ckCep.value=v;
+    deliveryQuote=null;deliveryNote.className='delivery-note';deliveryNote.textContent='Calculando a entrega pelo CEP…';recalc();
+    clearTimeout(cepAutoTimer);
+    if(v.replace(/\D/g,'').length===8) cepAutoTimer=setTimeout(()=>calculateDelivery(),280);
+    else deliveryNote.textContent='Informe seu CEP para calcular a entrega.';
+  });
+  useCashback.addEventListener('change',recalc);
+  function showError(msg){formError.textContent=msg;formError.hidden=false;}
+
+  async function ensureCheckoutAuth(){
+    await new Promise(resolve=>{const off=window.auth.onAuthStateChanged(()=>{off();resolve();});});
+    if(!window.auth.currentUser){try{await window.auth.signInAnonymously();}catch(e){console.warn('Anonymous auth',e);}}
+    const u=window.auth.currentUser;
+    realUser=u && !u.isAnonymous ? u : null;
+    if(realUser){
+      try{const snap=await window.db.collection('users').doc(realUser.uid).get();cashbackAvailable=Number((snap.exists?snap.data().cashback:0)||0);cashbackPanel.hidden=false;cashbackBalance.textContent=`${toBRL(cashbackAvailable)} disponíveis`;}
+      catch(e){console.warn('cashback',e);}
+    }
+    recalc();
+    return u;
+  }
+  const authReady=ensureCheckoutAuth();
+
+  async function calculateDelivery(){
+    const cep=ckCep.value.replace(/\D/g,'');
+    if(cep.length!==8){showError('Digite um CEP válido com 8 dígitos.');ckCep.focus();return null;}
+    formError.hidden=true; calcDeliveryBtn.disabled=true; calcDeliveryBtn.textContent='Calculando…';
+    try{
+      const r=await fetch('/api/delivery-quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cep,subtotal_cents:Math.round(subtotal*100)})});
+      const raw=await r.json().catch(()=>({})); if(!r.ok) throw new Error(raw.error||'Não foi possível calcular a entrega.');
+      const data=normalizeDeliveryQuote(raw);
+      if(!data.address) throw new Error('A resposta do cálculo de entrega veio incompleta. Tente novamente.');
+      if(!data.freeShipping && !(data.feeCents>0)) throw new Error('Não foi possível definir o valor da entrega para este CEP. Tente novamente.');
+      deliveryQuote=data; ckStreet.value=data.address.street||'';ckNeighborhood.value=data.address.neighborhood||'';ckCityState.value=`${data.address.city||''} / ${data.address.state||''}`;
+      if(data.freeShipping){deliveryNote.className='delivery-note free';deliveryNote.textContent='Frete grátis: seu pedido atingiu R$ 250,00 em produtos.';}
+      else if(data.surchargeActive){deliveryNote.className='delivery-note alert';deliveryNote.textContent=`Entrega ${toBRL(data.baseFeeCents/100)} + adicional automático de ${toBRL(data.surchargeCents/100)} por ${data.reasons.join(' e ')}. Total da entrega: ${toBRL(data.feeCents/100)}.`;}
+      else{deliveryNote.className='delivery-note';deliveryNote.textContent=`Entrega para ${data.address.neighborhood}: ${toBRL(data.feeCents/100)}.`;}
+      recalc(); return data;
+    }catch(e){deliveryQuote=null;deliveryNote.className='delivery-note alert';deliveryNote.textContent=e.message;recalc();showError(e.message);return null;}
+    finally{calcDeliveryBtn.disabled=false;calcDeliveryBtn.textContent='Calcular entrega';}
+  }
+  calcDeliveryBtn.addEventListener('click',calculateDelivery);
+  ckCep.addEventListener('blur',()=>{if(ckCep.value.replace(/\D/g,'').length===8&&!deliveryQuote)calculateDelivery();});
+
+  async function saveOrder(orderId,data){if(window.db)await window.db.collection('orders').doc(orderId).set(data,{merge:true});}
+
+  async function processCashback(orderId){
+    if(!realUser) return;
+    try{
+      const userRef=window.db.collection('users').doc(realUser.uid),orderRef=window.db.collection('orders').doc(orderId);
+      await window.db.runTransaction(async tx=>{
+        const [us,os]=await Promise.all([tx.get(userRef),tx.get(orderRef)]); const od=os.exists?os.data():{}; if(od.cashbackProcessed)return;
+        const current=Number((us.exists?us.data().cashback:0)||0),used=Math.min(Number(od.cashbackUsed||0),current),earned=Math.round(Math.max(0,Number(od.subtotal||0)-used)*0.01*100)/100;
+        tx.set(userRef,{cashback:Math.max(0,Math.round((current-used+earned)*100)/100)},{merge:true});
+        tx.set(orderRef,{cashbackUsed:used,cashbackEarned:earned,cashbackProcessed:true},{merge:true});
+      });
+    }catch(e){console.error('cashback processing',e);}
+  }
+
+  async function sendOrderConfirmation(orderId, transactionNsu, slug){
+    try{
+      const currentUser=window.auth && window.auth.currentUser;
+      if(!currentUser) throw new Error('Sessão do pedido não encontrada.');
+      const token=await currentUser.getIdToken();
+      const r=await fetch('/api/order-confirmation',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({orderId,transaction_nsu:transactionNsu,slug})});
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(data.error||'Não foi possível enviar as confirmações agora.');
+      if(successEmailNote){const sent=[];if(data.emailSent)sent.push('e-mail');if(data.whatsappSent)sent.push('WhatsApp');successEmailNote.textContent=data.alreadySent?'As confirmações deste pedido já foram enviadas.':(sent.length?'Confirmação enviada por '+sent.join(' e ')+'.':'Pagamento confirmado.');if(data.warnings&&data.warnings.length)successEmailNote.textContent+=' '+data.warnings.join(' | ');}
+    }catch(err){
+      console.warn('order confirmation notifications',err);
+      if(successEmailNote) successEmailNote.textContent='Pagamento confirmado. As confirmações podem levar alguns instantes para chegar.';
+    }
+  }
+
+  async function markInfinitePayPaid(orderId, payment, transactionNsu, slug, receiptUrl){
+    activeOrderId=orderId;
+    try{
+      await saveOrder(orderId,{
+        status:'paid',paymentStatus:'paid',paidAt:firebase.firestore.FieldValue.serverTimestamp(),
+        paymentMethod:String(payment.capture_method||'infinitepay'),
+        infinitepay:{transactionNsu,slug,receiptUrl:receiptUrl||null,captureMethod:payment.capture_method||null,installments:Number(payment.installments||1),amountCents:Number(payment.amount||0),paidAmountCents:Number(payment.paid_amount||0)}
+      });
+      await processCashback(orderId);
+    }catch(err){console.error('save paid order',err);}
+    emptyState.hidden=true; checkoutView.hidden=true;
+    orderIdEl.textContent='Código do pedido: '+orderId;
+    successOrderText.textContent=orderId;
+    if(successWhatsApp){
+      const msg=`Olá, Puffpod! Meu pagamento do pedido ${orderId} foi confirmado. Gostaria de acompanhar a entrega.`;
+      successWhatsApp.href='https://wa.me/5541999238366?text='+encodeURIComponent(msg);
+    }
+    successView.hidden=false; window.scrollTo({top:0,behavior:'smooth'});
+    await sendOrderConfirmation(orderId,transactionNsu,slug);
+  }
+
+  async function handleInfinitePayReturn(){
+    if(!isInfinitePayReturn) return;
+    emptyState.hidden=true; checkoutView.hidden=true; successView.hidden=true;
+    const orderId=params.get('order_nsu')||localStorage.getItem('puffpod_pending_order')||'';
+    const transactionNsu=params.get('transaction_nsu')||'';
+    const slug=params.get('slug')||'';
+    const receiptUrl=params.get('receipt_url')||'';
+    if(!orderId||!transactionNsu||!slug){
+      emptyState.hidden=false;
+      const title=emptyState.querySelector('h1'); const text=emptyState.querySelector('p');
+      if(title) title.textContent='Não foi possível confirmar o pagamento';
+      if(text) text.textContent='Os dados de retorno da InfinitePay vieram incompletos. Fale com a Puffpod informando o código do pedido.';
+      return;
+    }
+    try{
+      await authReady;
+      const r=await fetch('/api/infinitepay-payment-check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_nsu:orderId,transaction_nsu:transactionNsu,slug})});
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(data.error||data.message||'Não foi possível verificar o pagamento.');
+      if(data.success&&data.paid){
+        localStorage.removeItem('puffpod_pending_order');
+        await markInfinitePayPaid(orderId,data,transactionNsu,slug,receiptUrl);
+      }else{
+        emptyState.hidden=false;
+        const title=emptyState.querySelector('h1'); const text=emptyState.querySelector('p');
+        if(title) title.textContent='Pagamento ainda não confirmado';
+        if(text) text.textContent='A InfinitePay ainda não confirmou esse pagamento. Se você acabou de pagar, aguarde alguns segundos e atualize esta página.';
+      }
+    }catch(err){
+      console.error(err); emptyState.hidden=false;
+      const title=emptyState.querySelector('h1'); const text=emptyState.querySelector('p');
+      if(title) title.textContent='Não foi possível verificar o pagamento';
+      if(text) text.textContent=err.message||'Tente novamente em instantes.';
+    }
+  }
+
+  handleInfinitePayReturn();
+
+  checkoutForm.addEventListener('submit',async e=>{
+    e.preventDefault();formError.hidden=true;[ckName,ckCpf,ckPhone,ckEmail,ckCep,ckStreet,ckNumber].forEach(f=>f.classList.remove('invalid'));
+    const name=ckName.value.trim(),cpfDigits=ckCpf.value.replace(/\D/g,''),phoneDigits=ckPhone.value.replace(/\D/g,''),email=ckEmail.value.trim(),emailOk=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if(name.split(/\s+/).filter(Boolean).length<2){ckName.classList.add('invalid');showError('Digite seu nome completo.');return ckName.focus();}
+    if(cpfDigits.length!==11){ckCpf.classList.add('invalid');showError('CPF inválido.');return ckCpf.focus();}
+    if(phoneDigits.length<10||phoneDigits.length>11){ckPhone.classList.add('invalid');showError('Telefone inválido.');return ckPhone.focus();}
+    if(!emailOk){ckEmail.classList.add('invalid');showError('Digite um e-mail válido.');return ckEmail.focus();}
+    if(ckCep.value.replace(/\D/g,'').length!==8||!deliveryQuote){const q=await calculateDelivery();if(!q)return;}
+    if(!ckStreet.value.trim()){ckStreet.classList.add('invalid');showError('Informe a rua de entrega.');return ckStreet.focus();}
+    if(!ckNumber.value.trim()){ckNumber.classList.add('invalid');showError('Informe o número do endereço.');return ckNumber.focus();}
+
+    const user=await authReady; recalc(); const total=recalc();
+    const orderId='PP-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+    const submitBtn=checkoutForm.querySelector('button[type="submit"]'),label=submitBtn.textContent;submitBtn.disabled=true;submitBtn.textContent='Abrindo InfinitePay…';
+    try{
+      const address={cep:ckCep.value.replace(/\D/g,''),street:ckStreet.value.trim(),number:ckNumber.value.trim(),complement:ckComplement.value.trim(),neighborhood:ckNeighborhood.value.trim(),city:'Curitiba',state:'PR',reference:ckReference.value.trim()};
+      const orderData={orderId,uid:user?user.uid:null,isGuest:!realUser,name,email,cpf:cpfDigits,phone:phoneDigits,items:items.map(it=>({name:it.name,price:Number(it.price)||0,qty:Math.max(1,parseInt(it.qty,10)||1)})),subtotal,delivery:{...address,baseFee:deliveryQuote.baseFeeCents/100,surcharge:deliveryQuote.surchargeCents/100,fee:deliveryQuote.feeCents/100,surchargeReasons:deliveryQuote.reasons||[]},cashbackUsed,total,status:'pending_payment',paymentMethod:'infinitepay',paymentStatus:'pending',createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+      await saveOrder(orderId,orderData);
+      const paymentHeaders={'Content-Type':'application/json'};
+      if(realUser){try{paymentHeaders.Authorization='Bearer '+await realUser.getIdToken();}catch(e){}}
+      const r=await fetch('/api/infinitepay-create-checkout',{method:'POST',headers:paymentHeaders,body:JSON.stringify({orderId,subtotal_cents:Math.round(subtotal*100),cashback_cents:Math.round(cashbackUsed*100),cep:address.cep,name,email,phone:phoneDigits,number:address.number,complement:address.complement})});
+      const data=await r.json().catch(()=>({}));if(!r.ok||!data.url)throw new Error(data.error||data.message||'Não foi possível abrir o pagamento da InfinitePay.');
+      const calc=data.calculated||{};const serverTotal=Number(calc.total_cents||Math.round(total*100))/100;
+      await saveOrder(orderId,{total:serverTotal,delivery:{...orderData.delivery,fee:Number(calc.delivery_fee_cents||deliveryQuote.feeCents)/100},infinitepay:{checkoutUrl:data.url},checkoutCreatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      localStorage.setItem('puffpod_pending_order',orderId);
+      window.location.href=data.url;
+    }catch(err){console.error(err);showError(err.message||'Não foi possível abrir o pagamento. Tente novamente.');}
+    finally{submitBtn.disabled=false;submitBtn.textContent=label;}
+  });
+})();;
+</script>
+
+</body>
+</html>
