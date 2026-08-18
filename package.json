@@ -1,9 +1,0 @@
-{
-  "name": "puffpod-production",
-  "private": true,
-  "version": "1.9.0",
-  "dependencies": {
-    "nodemailer": "^6.10.1",
-    "firebase-admin": "^12.7.0"
-  }
-}
