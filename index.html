@@ -1957,6 +1957,93 @@
   }
 }
 
+
+/* ============================================================
+   V34 — CORREÇÃO DEFINITIVA DO MOVIMENTO IGNITE V400 MIX
+   Replica visualmente o podFloatGentle dos cards antigos,
+   sem conflito com os overrides legados de transform.
+   ============================================================ */
+
+.catalog-card.composite-card.layered-pod-card .ignite-pod-float{
+  position:absolute !important;
+
+  /* maior e mais centralizado/baixo */
+  left:50% !important;
+  top:45% !important;
+  width:88% !important;
+
+  z-index:2 !important;
+  pointer-events:none !important;
+  opacity:1 !important;
+
+  /* somente centralização estática */
+  transform:translate(-50%,-50%) !important;
+  transform-origin:center center !important;
+
+  /* a animação usa translate/rotate independentes,
+     então não é bloqueada pelo transform !important antigo */
+  translate:0 0;
+  rotate:-1.2deg;
+
+  animation:igniteV34OldPodMotion 4.4s ease-in-out infinite !important;
+  animation-play-state:running !important;
+
+  filter:drop-shadow(0 21px 25px rgba(0,0,0,.52)) !important;
+}
+
+@keyframes igniteV34OldPodMotion{
+  0%,100%{
+    translate:0 0;
+    rotate:-1.2deg;
+  }
+  50%{
+    translate:0 -12px;
+    rotate:1.2deg;
+  }
+}
+
+.catalog-card.composite-card.layered-pod-card .ignite-pod-float img{
+  display:block !important;
+  width:100% !important;
+  height:auto !important;
+  max-width:none !important;
+  object-fit:contain !important;
+
+  /* nenhuma animação no PNG em si */
+  transform:none !important;
+  translate:none !important;
+  rotate:none !important;
+  animation:none !important;
+}
+
+/* O fundo continua totalmente parado */
+.catalog-card.composite-card.layered-pod-card .composite-bg{
+  transform:none !important;
+  translate:none !important;
+  rotate:none !important;
+  animation:none !important;
+}
+
+/* Nome, preço e botão permanecem na frente do pod */
+.catalog-card.composite-card.layered-pod-card .composite-info{
+  z-index:5 !important;
+}
+
+/* O card em si não se move; somente o pod */
+.catalog-card.composite-card.layered-pod-card,
+.catalog-card.composite-card.layered-pod-card:hover,
+.catalog-card.composite-card.layered-pod-card.touch-active{
+  transform:none !important;
+}
+
+/* Mobile: grande, mas ainda contido no card */
+@media (max-width:640px){
+  .catalog-card.composite-card.layered-pod-card .ignite-pod-float{
+    top:44% !important;
+    width:94% !important;
+  }
+}
+
 </style>
 </head>
 <body>
