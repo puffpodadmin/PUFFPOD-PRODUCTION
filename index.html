@@ -2500,6 +2500,11 @@
   .frozen20k-card .pod-float img {
     mix-blend-mode: normal !important;
   }
+  .catalog-card.photo-card .pod-float,
+  .card.photo-card .pod-float {
+    width: 49% !important;
+    top: 39% !important;
+  }
 </style>
 
 <style id="v63-elfbar-fixes">
@@ -3341,6 +3346,7 @@
     for(const [flag, imagePath] of Object.entries(RECORTED_POD_IMAGES)){
       if(p[flag]){
         p.image = imagePath;
+        p.recortadoPod = true;
         break;
       }
     }
@@ -4518,7 +4524,7 @@
         <div class="composite-media">
           <img class="composite-bg" src="${p.layeredPodCard ? p.bg : p.image}" alt="" loading="lazy" decoding="async">
           ${p.layeredPodCard
-            ? `<div class="pod-float ignite-pod-float" ${p.v400IceCard ? `style="width:49% !important; top:39% !important;"` : (p.v155Card ? `style="width:48% !important; top:39.5% !important;"` : (p.duke35kCard ? `style="width:31.5% !important; top:39.6% !important;"` : (p.te30kCard ? `style="width:42% !important; top:39.2% !important;"` : (p.trio40kCard ? `style="width:54% !important; top:39% !important;"` : (p.bcpro45kCard ? `style="width:78% !important; top:39% !important;"` : (p.v55Card ? `style="width:76% !important; top:39% !important;"` : (p.v80Card ? `style="width:77% !important; top:39% !important;"` : (p.v150Card ? `style="width:63% !important; top:39% !important;"` : (p.frozen20kCard ? `style="width:49% !important; top:39% !important;"` : (p.v300SlimCard ? `style="width:72% !important; top:39% !important;"` : (p.v500Card ? `style="width:78% !important; top:39% !important;"` : (p.blackSheep40kCard ? `style="width:76% !important; top:39% !important;"` : (p.blackSheep30kCard ? `style="width:49% !important; top:39% !important;"` : (p.blackSheep55kCard ? `style="width:49% !important; top:39% !important;"` : (p.nikbar10kCard ? `style="width:49% !important; top:39% !important;"` : (p.nikbar40kCard ? `style="width:49% !important; top:39% !important;"` : ((p.name && p.name.startsWith('ELFBAR ICE KING 40K')) ? `style="width:41% !important; top:39.2% !important;"` : (p.bc15kCard ? `style="width:38.5% !important; top:39.2% !important;"` : ''))))))))))))))))))} aria-hidden="true"><img src="${p.image}" alt="${p.name}" loading="lazy" decoding="async"></div>`
+            ? `<div class="pod-float ignite-pod-float" style="width:${p.recortadoPod ? '42%' : '49%'} !important; top:39% !important;" aria-hidden="true"><img src="${p.image}" alt="${p.name}" loading="lazy" decoding="async"></div>`
             : `<div class="composite-pod-motion" aria-hidden="true"><img src="${p.image}" alt="${p.name}" loading="lazy" decoding="async"></div>`}
         </div>
         <div class="composite-info">
