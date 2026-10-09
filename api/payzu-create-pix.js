@@ -3,7 +3,7 @@ const { getAdmin } = require('../lib/firebase-admin');
 const { payzuFetch, webhookUrl, publicBaseUrl } = require('../lib/payzu');
 const activepayments = require('../lib/activepayments');
 const QRCode = require('qrcode');
-const { isOpenNow, scheduleMessage } = require('../lib/business-hours');
+const { evaluateStore, loadStoreSettings, scheduleMessage } = require('../lib/business-hours');
 
 async function verifiedSubtotalFromCatalog(db,items,submittedSubtotal){
   if(!Array.isArray(items)||!items.length) return submittedSubtotal;
@@ -33,8 +33,14 @@ function cleanName(v){
 module.exports=async function handler(req,res){
   if(req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
   try{
-    if(!isOpenNow()){
-      return res.status(403).json({error:`Estamos fechados no momento. ${scheduleMessage()}`,closed:true});
+    {
+      const storeState=evaluateStore(await loadStoreSettings(getAdmin().firestore()));
+      if(!storeState.open){
+        const msg=storeState.reason==='paused'
+          ? 'O atendimento foi pausado por hoje. Voltamos no próximo horário de atendimento.'
+          : `Estamos fechados no momento. ${scheduleMessage()}`;
+        return res.status(403).json({error:msg,closed:true});
+      }
     }
 
     const auth=String(req.headers.authorization||'');

@@ -453,23 +453,36 @@
   // Mesma regra validada de novo no servidor (api/payzu-create-pix.js), então
   // isso aqui é só pra avisar o cliente e evitar um clique inútil — não dá
   // pra burlar só escondendo o aviso, o backend recusa do mesmo jeito.
-  function storeOpenNow(){
+  let storeSettings={};
+  function spDateKey(d){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(d||new Date());}
+  function storeState(){
+    const now=new Date(), today=spDateKey(now), st=storeSettings||{};
+    if(st.pausedDay===today) return {open:false,reason:'paused'};
     const fmt=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false});
-    const map={}; fmt.formatToParts(new Date()).forEach(p=>map[p.type]=p.value);
+    const map={}; fmt.formatToParts(now).forEach(p=>map[p.type]=p.value);
     const weekdayMap={Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6};
     let hour=Number(map.hour); if(hour===24) hour=0;
     const minutes=hour*60+Number(map.minute), dow=weekdayMap[map.weekday];
-    if(dow>=1&&dow<=4) return minutes>=10*60; // seg a qui: 10h-00h
-    return minutes>=12*60&&minutes<18*60; // sex a dom: 12h-18h
+    const base=(dow>=1&&dow<=4)?minutes>=10*60:(minutes>=12*60&&minutes<18*60);
+    if(base) return {open:true,reason:'schedule'};
+    if(st.extendDay===today && Number(st.extendUntilMs)>now.getTime()) return {open:true,reason:'extended'};
+    return {open:false,reason:'closed'};
   }
+  function storeOpenNow(){return storeState().open;}
+  (function watchStoreSettings(){
+    try{
+      window.db.collection('siteSettings').doc('storeHours').onSnapshot(snap=>{storeSettings=snap.exists?snap.data():{};updateHoursUI();},()=>{});
+    }catch(e){}
+  })();
   function updateHoursUI(){
-    const open=storeOpenNow();
+    const stt=storeState(), open=stt.open;
     if(open){
       hoursNotice.hidden=true; hoursNotice.className='hours-notice';
       if(submitBtn){submitBtn.disabled=false;}
     }else{
       hoursNotice.hidden=false; hoursNotice.className='hours-notice closed';
-      hoursNotice.textContent='⏰ Estamos fechados no momento. Funcionamos de segunda a quinta das 10h às 00h, e de sexta a domingo das 12h às 18h. Volte dentro desse horário para finalizar sua compra.';
+      if(stt.reason==='paused'){hoursNotice.textContent='⏰ O atendimento foi pausado por hoje. Voltamos no próximo horário de atendimento.';}
+      else hoursNotice.textContent='⏰ Estamos fechados no momento. Funcionamos de segunda a quinta das 10h às 00h, e de sexta a domingo das 12h às 18h. Volte dentro desse horário para finalizar sua compra.';
       if(submitBtn){submitBtn.disabled=true;}
     }
     return open;

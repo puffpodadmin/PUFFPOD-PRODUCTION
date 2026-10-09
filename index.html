@@ -2788,6 +2788,25 @@
   .price .old-price + .current-price,.pm-price .old-price + .current-price{color:#4dff9a !important;font-size:1.22em !important;font-weight:800 !important;text-shadow:0 0 14px rgba(77,255,154,.45)}
   .card .price .old-price{font-size:.8rem !important}
   .card .price .old-price + .current-price{font-size:1.05rem !important}
+
+  .sh-card{border:1px solid rgba(72,202,228,.28);background:rgba(72,202,228,.06);border-radius:14px;padding:14px;margin-bottom:16px}
+  .sh-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .sh-status{font-size:.8rem;font-weight:800;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.08)}
+  .sh-status.open{background:rgba(54,208,100,.18);color:#6dffa6}
+  .sh-status.closed{background:rgba(255,107,107,.18);color:#ff9a9a}
+  .sh-row{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+  .sh-row input,.sh-row select{background:rgba(255,255,255,.06);border:1px solid rgba(72,202,228,.3);border-radius:10px;color:inherit;font:inherit;padding:10px 12px}
+  .sh-row input{width:84px}
+  .sh-row select option{background:#06182a;color:#fff}
+  .sh-btn{border:0;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer;font-family:inherit}
+  .sh-go{background:linear-gradient(90deg,#13b9d0,#36d0bd);color:#032033}
+  .sh-stop{background:linear-gradient(90deg,#ff6b6b,#ff9a5a);color:#2a0a0a}
+  .sh-btn:disabled{opacity:.55;cursor:wait}
+  .sh-links{display:flex;gap:14px;margin-top:8px}
+  .sh-links button{background:none;border:0;color:#7fd8ea;text-decoration:underline;cursor:pointer;font:inherit;font-size:.82rem;padding:0}
+  .sh-links button[hidden]{display:none}
+  .sh-hint{font-size:.76rem;opacity:.7;margin:10px 0 0}
+  @media(max-width:560px){.sh-btn{flex:1 1 100%}}
 </style>
   <link rel="preload" as="image" href="assets/embedded/adc5aba841822287.webp" type="image/webp" fetchpriority="high">
 </head>
@@ -2968,6 +2987,17 @@
         <p class="admin-hint">Altere preço, crie promoções e controle o estoque. Quando uma promoção estiver ativa, o card do produto exibirá automaticamente “De” e “Por” para todos os visitantes. Os produtos ficam agrupados por linha (ex: IGNITE V400 ICE) — clique numa linha para abrir a lista de sabores. Preencha “Quantidade em estoque” para o produto virar “Em falta” sozinho quando chegar a zero; deixe em branco para continuar controlando manualmente pelo toggle.</p>
         <button type="button" id="adminTelegramTest" class="admin-carousel-save" style="margin-bottom:14px;">Testar aviso no Telegram</button>
         <button type="button" id="adminActiveListBtn" class="admin-carousel-save" style="margin-bottom:14px;margin-left:8px;">Listar pods ativos</button>
+        <div id="storeHoursCard" class="sh-card">
+          <div class="sh-head"><strong>Expediente da loja</strong><span id="shStatus" class="sh-status">Carregando…</span></div>
+          <div class="sh-row">
+            <input type="number" id="shAmount" min="1" max="999" value="1" inputmode="numeric" aria-label="Quanto tempo">
+            <select id="shUnit" aria-label="Unidade"><option value="h">hora(s)</option><option value="m">minuto(s)</option></select>
+            <button type="button" id="shExtendBtn" class="sh-btn sh-go">Continuar expediente</button>
+            <button type="button" id="shPauseBtn" class="sh-btn sh-stop">Pausar expediente</button>
+          </div>
+          <div class="sh-links"><button type="button" id="shCancelExtend" hidden>Encerrar prorrogação</button><button type="button" id="shResume" hidden>Retomar expediente</button></div>
+          <p class="sh-hint">“Continuar” mantém a loja aberta pelo tempo escolhido, contando a partir de agora. “Pausar” fecha a loja pelo resto do dia e vale mesmo com prorrogação. Tudo volta ao horário normal à meia-noite.</p>
+        </div>
         <div class="admin-stock-search">
           <input type="text" id="adminStockSearch" placeholder="Buscar por linha, marca ou sabor (ex: V400 ICE, mango...)" autocomplete="off" spellcheck="false">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -6222,5 +6252,59 @@
   });
 })();
 </script>
+<script id="js-store-hours">
+/* Continuar / Pausar expediente (siteSettings/storeHours) */
+(function(){
+  var TZ='America/Sao_Paulo';
+  function dayKey(d){return new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(d||new Date());}
+  function hhmm(ms){return new Intl.DateTimeFormat('pt-BR',{timeZone:TZ,hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(ms));}
+  function baseOpen(now){
+    var map={};new Intl.DateTimeFormat('en-US',{timeZone:TZ,weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(now).forEach(function(p){map[p.type]=p.value;});
+    var dow={Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}[map.weekday],h=Number(map.hour);if(h===24)h=0;var m=h*60+Number(map.minute);
+    return (dow>=1&&dow<=4)?m>=600:(m>=720&&m<1080);
+  }
+  var cfg={},ref=null,started=false;
+  function el(id){return document.getElementById(id);}
+  function render(){
+    var st=el('shStatus'); if(!st) return;
+    var now=new Date(),today=dayKey(now),paused=cfg.pausedDay===today,ext=cfg.extendDay===today&&Number(cfg.extendUntilMs)>now.getTime();
+    var txt,cls;
+    if(paused){txt='Pausada até meia-noite';cls='closed';}
+    else if(baseOpen(now)){txt='Aberta (horário padrão)'+(ext?' · prorrogada até '+hhmm(cfg.extendUntilMs):'');cls='open';}
+    else if(ext){txt='Aberta (prorrogada até '+hhmm(cfg.extendUntilMs)+')';cls='open';}
+    else{txt='Fechada (fora do horário)';cls='closed';}
+    st.textContent=txt;st.className='sh-status '+cls;
+    el('shResume').hidden=!paused; el('shCancelExtend').hidden=!ext;
+  }
+  function save(data){
+    var b=[el('shExtendBtn'),el('shPauseBtn')];b.forEach(function(x){x.disabled=true;});
+    data.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
+    return ref.set(data,{merge:true}).then(function(){Object.assign(cfg,data);render();}).catch(function(e){alert('Não foi possível salvar: '+(e&&e.message||e));}).then(function(){b.forEach(function(x){x.disabled=false;});});
+  }
+  function start(){
+    if(started||!el('storeHoursCard')||!window.db) return; started=true;
+    ref=window.db.collection('siteSettings').doc('storeHours');
+    ref.onSnapshot(function(s){cfg=s.exists?s.data():{};render();},function(){render();});
+    setInterval(render,30000);
+    el('shExtendBtn').onclick=function(){
+      var n=Math.floor(Number(el('shAmount').value));if(!(n>0)){alert('Informe um tempo válido.');return;}
+      var mins=el('shUnit').value==='h'?n*60:n;
+      var until=Date.now()+mins*60000, note='';
+      var endOfDay=new Date(until); if(dayKey(endOfDay)!==dayKey()) note='\n\nAtenção: a prorrogação vale no máximo até 00:00; depois disso volta ao horário normal.';
+      if(!confirm('Manter a loja aberta por '+n+(el('shUnit').value==='h'?' hora(s)':' minuto(s)')+' (até '+hhmm(until)+')?'+note)) return;
+      save({extendDay:dayKey(),extendUntilMs:until});
+    };
+    el('shPauseBtn').onclick=function(){
+      if(!confirm('Pausar o expediente? A loja fica fechada pelo resto do dia (até 00:00).')) return;
+      save({pausedDay:dayKey()});
+    };
+    el('shResume').onclick=function(){save({pausedDay:''});};
+    el('shCancelExtend').onclick=function(){save({extendDay:'',extendUntilMs:0});};
+  }
+  document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('.admin-tab,#adminTrigger')) setTimeout(start,50); });
+  if(document.readyState!=='loading') setTimeout(start,1500); else document.addEventListener('DOMContentLoaded',function(){setTimeout(start,1500);});
+})();
+</script>
+
 </body>
 </html>
