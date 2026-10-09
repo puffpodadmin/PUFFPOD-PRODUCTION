@@ -79,30 +79,23 @@ module.exports=async function handler(req,res){
     const email=String(b.email||'').trim().slice(0,180)||undefined;
     const amountReais=Number((total/100).toFixed(2));
 
-    // 1) Gateway PRIMÁRIO: ActivePayments. Qualquer falha cai no fallback (PayZu).
-    let pix=null, gateway=null, primaryError=null;
-    if(activepayments.isConfigured()){
-      try{
-        const whToken=String(process.env.ACTIVEPAYMENTS_WEBHOOK_TOKEN||process.env.PAYZU_WEBHOOK_TOKEN||'').trim();
-        const postbackUrl=whToken?`${publicBaseUrl(req)}/api/payzu-webhook?gw=ap&token=${encodeURIComponent(whToken)}`:undefined;
-        const c=await activepayments.createPixCharge({
-          amount:amountReais,name:cleanedName.length>=3?cleanedName:'Cliente Puffpod',cpf:cpfDigits,email,
-          phone:b.phone,reference:orderId,postbackUrl,expirationMinutes:15,info:`Pedido ${orderId} - Puffpod`
-        });
-        let qrBase64=c.qrCodeBase64;
-        if(!qrBase64){
-          try{ qrBase64=(await QRCode.toDataURL(c.qrCodeText,{margin:1,width:360})).replace(/^data:image\/png;base64,/,''); }catch(e){ qrBase64=''; }
-        }
-        pix={id:c.id,status:c.status,amount:c.amount||amountReais,qrCodeText:c.qrCodeText,qrCodeBase64:qrBase64,qrCodeUrl:null,serviceFeeCharged:0};
-        gateway='activepayments';
-      }catch(e){
-        primaryError=e;
-        console.error('activepayments create failed -> fallback PayZu',{message:e.message,status:e.status});
+    // Gateways: PayZu é o PRIMÁRIO e a ActivePayments o FALLBACK.
+    // Para inverter a ordem sem mexer no código: GATEWAY_PRIMARY=activepayments (Vercel).
+    const attemptActive=async()=>{
+      if(!activepayments.isConfigured()) throw new Error('ActivePayments não configurada.');
+      const whToken=String(process.env.ACTIVEPAYMENTS_WEBHOOK_TOKEN||process.env.PAYZU_WEBHOOK_TOKEN||'').trim();
+      const postbackUrl=whToken?`${publicBaseUrl(req)}/api/payzu-webhook?gw=ap&token=${encodeURIComponent(whToken)}`:undefined;
+      const c=await activepayments.createPixCharge({
+        amount:amountReais,name:cleanedName.length>=3?cleanedName:'Cliente Puffpod',cpf:cpfDigits,email,
+        phone:b.phone,reference:orderId,postbackUrl,expirationMinutes:15,info:`Pedido ${orderId} - Puffpod`
+      });
+      let qrBase64=c.qrCodeBase64;
+      if(!qrBase64){
+        try{ qrBase64=(await QRCode.toDataURL(c.qrCodeText,{margin:1,width:360})).replace(/^data:image\/png;base64,/,''); }catch(e){ qrBase64=''; }
       }
-    }
-
-    // 2) Fallback: PayZu
-    if(!pix){
+      return {gateway:'activepayments',pix:{id:c.id,status:c.status,amount:c.amount||amountReais,qrCodeText:c.qrCodeText,qrCodeBase64:qrBase64,qrCodeUrl:null,serviceFeeCharged:0}};
+    };
+    const attemptPayzu=async()=>{
       const callbackUrl=webhookUrl(req);
       const payload={
         amount:amountReais,
@@ -116,8 +109,26 @@ module.exports=async function handler(req,res){
       Object.keys(payload).forEach(k=>payload[k]===undefined&&delete payload[k]);
       const data=await payzuFetch('/pix',{method:'POST',body:payload,tokenType:'deposit'});
       if(!data.id||!data.qrCodeText) throw new Error('A PayZu não retornou o QR Code da cobrança.');
-      pix={id:String(data.id),status:String(data.status||'PENDING'),amount:Number(data.amount||amountReais),qrCodeText:String(data.qrCodeText),qrCodeBase64:data.qrCodeBase64||null,qrCodeUrl:data.qrCodeUrl||null,serviceFeeCharged:Number(data.serviceFeeCharged||0)};
-      gateway='payzu';
+      return {gateway:'payzu',pix:{id:String(data.id),status:String(data.status||'PENDING'),amount:Number(data.amount||amountReais),qrCodeText:String(data.qrCodeText),qrCodeBase64:data.qrCodeBase64||null,qrCodeUrl:data.qrCodeUrl||null,serviceFeeCharged:Number(data.serviceFeeCharged||0)}};
+    };
+    const activeFirst=String(process.env.GATEWAY_PRIMARY||'payzu').toLowerCase()==='activepayments';
+    const order=activeFirst?[['activepayments',attemptActive],['payzu',attemptPayzu]]:[['payzu',attemptPayzu],['activepayments',attemptActive]];
+
+    let pix=null, gateway=null, primaryError=null;
+    for(let i=0;i<order.length;i++){
+      const [name,fn]=order[i];
+      try{
+        const r=await fn();
+        pix=r.pix; gateway=r.gateway; break;
+      }catch(e){
+        if(i===0){
+          primaryError=e;
+          console.error(`${name} create failed -> fallback`,{message:e.message,status:e.status});
+        }else if(primaryError){
+          console.error(`${name} (fallback) also failed`,{message:e.message,status:e.status});
+          throw primaryError; // mostra o erro do gateway principal
+        }else throw e;
+      }
     }
 
     const gatewayInfo=gateway==='activepayments'
