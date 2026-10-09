@@ -332,8 +332,7 @@
             <div class="field"><span>CEP</span><input type="text" id="ckCep" placeholder="00000-000" inputmode="numeric" maxlength="9" autocomplete="postal-code"></div>
             <button type="button" class="btn cep-btn" id="calcDeliveryBtn">Calcular entrega</button>
           </div>
-          <div class="field"><span>Não sabe o CEP? Busque pela rua — cidade</span><select id="ckSearchCity"><option value="Curitiba">Curitiba / PR</option><option value="Campo Largo">Campo Largo / PR</option></select></div>
-          <div class="field street-wrap"><span>Rua</span><input type="text" id="ckStreet" placeholder="Digite o nome da rua para achar o CEP" autocomplete="off"><div class="street-results" id="streetResults" hidden></div></div>
+          <div class="field street-wrap"><span>Rua</span><input type="text" id="ckStreet" placeholder="Digite o nome da rua para buscar o CEP" autocomplete="off"><div class="street-results" id="streetResults" hidden></div></div>
           <div class="field-row">
             <div class="field"><span>Número</span><input type="text" id="ckNumber" placeholder="Número" autocomplete="address-line2"></div>
             <div class="field"><span>Complemento</span><input type="text" id="ckComplement" placeholder="Apto, bloco, casa..." autocomplete="address-line3"></div>
@@ -571,7 +570,7 @@
   calcDeliveryBtn.addEventListener('click',calculateDelivery);
   ckCep.addEventListener('blur',()=>{if(ckCep.value.replace(/\D/g,'').length===8&&!deliveryQuote)calculateDelivery();});
   // Busca de CEP pelo nome da rua (ViaCEP)
-  const streetResults=$('streetResults'), ckSearchCity=$('ckSearchCity');
+  const streetResults=$('streetResults');
   let streetTimer=null, streetSeq=0;
   const escHtml=t=>String(t||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function hideStreetResults(){streetResults.hidden=true;streetResults.innerHTML='';}
@@ -581,18 +580,18 @@
     const seq=++streetSeq;
     streetResults.hidden=false;streetResults.innerHTML='<div class="sr-msg">Buscando…</div>';
     try{
-      const city=ckSearchCity.value;
-      const r=await fetch(`https://viacep.com.br/ws/PR/${encodeURIComponent(city)}/${encodeURIComponent(q)}/json/`);
-      if(!r.ok) throw new Error('http');
-      const list=await r.json();
+      const lists=await Promise.all(['Curitiba','Campo Largo'].map(async city=>{
+        try{const r=await fetch(`https://viacep.com.br/ws/PR/${encodeURIComponent(city)}/${encodeURIComponent(q)}/json/`);if(!r.ok)return[];const l=await r.json();return Array.isArray(l)?l:[];}catch(e){return null;}
+      }));
+      if(lists.every(l=>l===null)) throw new Error('net');
+      const list=[].concat(...lists.map(l=>l||[]));
       if(seq!==streetSeq) return;
       if(!Array.isArray(list)||!list.length){streetResults.innerHTML='<div class="sr-msg">Nenhuma rua encontrada. Confira o nome ou digite o CEP.</div>';return;}
-      streetResults.innerHTML=list.slice(0,15).map((x,i)=>`<button type="button" data-i="${i}">${escHtml(x.logradouro)}<small>${escHtml(x.bairro)} · CEP ${escHtml(x.cep)}</small></button>`).join('');
+      streetResults.innerHTML=list.slice(0,15).map((x,i)=>`<button type="button" data-i="${i}">${escHtml(x.logradouro)}<small>${escHtml(x.bairro)} · ${escHtml(x.localidade)} · CEP ${escHtml(x.cep)}</small></button>`).join('');
       streetResults._list=list.slice(0,15);
     }catch(e){if(seq===streetSeq)streetResults.innerHTML='<div class="sr-msg">Não foi possível buscar agora. Digite o CEP.</div>';}
   }
   ckStreet.addEventListener('input',()=>{clearTimeout(streetTimer);streetTimer=setTimeout(searchStreet,400);});
-  ckSearchCity.addEventListener('change',()=>{if(ckStreet.value.trim().length>=3)searchStreet();});
   streetResults.addEventListener('click',ev=>{
     const b=ev.target.closest('button[data-i]');if(!b)return;
     const x=(streetResults._list||[])[Number(b.dataset.i)];if(!x)return;
