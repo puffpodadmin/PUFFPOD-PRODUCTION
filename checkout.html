@@ -593,7 +593,7 @@
     const seq=++streetSeq;
     streetResults.hidden=false;streetResults.innerHTML='<div class="sr-msg">Buscando…</div>';
     try{
-      const lists=await Promise.all(['Curitiba','Campo Largo'].map(async city=>{
+      const lists=await Promise.all(['Curitiba','Campo Largo','Colombo'].map(async city=>{
         try{const r=await fetch(`https://viacep.com.br/ws/PR/${encodeURIComponent(city)}/${encodeURIComponent(q)}/json/`);if(!r.ok)return[];const l=await r.json();return Array.isArray(l)?l:[];}catch(e){return null;}
       }));
       if(lists.every(l=>l===null)) throw new Error('net');
