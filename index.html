@@ -192,6 +192,9 @@
   }
   .account-menu-btn:hover{ background:rgba(72,202,228,.10); color:var(--aqua); }
   .account-menu-btn svg{ width:18px; height:18px; stroke:currentColor; flex:0 0 auto; }
+  .account-menu-btn.admin{ color:#ffc400; }
+  .account-menu-btn.admin:hover{ background:rgba(255,196,0,.12); color:#ffc400; }
+  .account-menu-btn[hidden]{ display:none; }
   .account-menu-btn.logout{ color:#ff9a9d; margin-top:4px; border-top:1px solid var(--line); border-radius:0 0 12px 12px; }
 
   .account-detail-modal{ position:fixed; inset:0; z-index:370; display:flex; align-items:center; justify-content:center; padding:22px; }
@@ -2869,6 +2872,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg>
     <span>Ganhos com indicação</span>
   </button>
+  <button type="button" class="account-menu-btn admin" id="accountAdminBtn" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z"/></svg>
+    <span>Painel Admin</span>
+  </button>
   <button type="button" class="account-menu-btn logout" id="accountLogoutBtn">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h5"/><path d="M14 8l4 4-4 4M18 12H8"/></svg>
     <span>Sair</span>
@@ -4245,6 +4252,7 @@
   const accountReferralBtn = document.getElementById('accountReferralBtn');
   const signupReferral = document.getElementById('signupReferral');
   const accountLogoutBtn = document.getElementById('accountLogoutBtn');
+  const accountAdminBtn = document.getElementById('accountAdminBtn');
   const accountDetailModal = document.getElementById('accountDetailModal');
   const accountDetailScrim = document.getElementById('accountDetailScrim');
   const accountDetailClose = document.getElementById('accountDetailClose');
@@ -4600,6 +4608,9 @@
     if(adminTrigger){
       adminTrigger.hidden = !(user && user.email === ADMIN_EMAIL);
     }
+    if(accountAdminBtn){
+      accountAdminBtn.hidden = !(user && user.email === ADMIN_EMAIL);
+    }
     if(accountMenuName) accountMenuName.textContent = user ? (user.displayName || 'Minha conta') : 'Minha conta';
     if(accountMenuEmail) accountMenuEmail.textContent = user ? (user.email || '') : '';
     if(user){
@@ -4631,6 +4642,7 @@
   accountMenu && accountMenu.addEventListener('click', (e) => e.stopPropagation());
   document.addEventListener('click', () => closeAccountMenu());
   window.addEventListener('resize', () => { if(accountMenu && !accountMenu.hidden) positionAccountMenu(); });
+  accountAdminBtn && accountAdminBtn.addEventListener('click', () => { closeAccountMenu(); if(adminTrigger) adminTrigger.click(); });
   accountCartBtn && accountCartBtn.addEventListener('click', () => { closeAccountMenu(); if(window.openPuffCart) window.openPuffCart(); });
   accountOrdersBtn && accountOrdersBtn.addEventListener('click', showMyOrders);
   accountCashbackBtn && accountCashbackBtn.addEventListener('click', showCashback);
